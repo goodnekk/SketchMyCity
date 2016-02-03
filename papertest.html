@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Sketch my city</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        #back {
+            position: absolute;
+        }
+        #map{
+            position: absolute;
+        }
+    </style>
+  </head>
+  <body>
+    <div>A collaborative hand-drawn map, using sockets.io for real time updates</div>
+    <img id="back" src="buurtimg">
+    <canvas id="map"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.9.25/paper-full.min.js" charset="utf-8"></script>
+    <script>
+
+        //setup
+        var canvas = document.getElementById('map');
+        //canvas.width = window.innerWidth;
+        //canvas.height = window.innerHeight;
+        canvas.width = 1680;
+        canvas.height = 987;
+        paper.setup(canvas);
+        var socket = io();
+
+        //drawing events
+        //var path = new paper.Path.Rectangle([0, 0], [10, 10]);
+        //path.strokeColor = 'black';
+        var mouseDown = false;
+        var mousePos = {};
+        var currentPath;
+
+
+        canvas.addEventListener('mousemove', function(e){
+            mousePos.x = e.offsetX;
+            mousePos.y = e.offsetY;
+
+            if(mouseDown === true){
+                currentPath.add(new paper.Point(mousePos.x, mousePos.y));
+            }
+            //path.position = new paper.Point(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mousedown', function(e){
+            mouseDown = true;
+            currentPath = new paper.Path([new paper.Point(mousePos.x, mousePos.y)]);
+            currentPath.strokeColor = 'black';
+        });
+
+        canvas.addEventListener('mouseup', function(e){
+            mouseDown = false;
+            currentPath.simplify(5);
+            socket.emit('line', currentPath.pathData);
+        });
+
+        socket.on('line', function(segments){
+            var p = new paper.Path(segments);
+            p.strokeColor = 'black';
+            paper.view.update();
+        });
+    </script>
+
+  </body>
+</html>

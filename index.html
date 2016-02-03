@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+    </style>
+
+
+  </head>
+  <body>
+    <canvas id="map"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+
+        var canvas = $('#map')[0];
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        var ctx = canvas.getContext('2d');
+
+        var others = [];
+
+        var mousepos = {};
+        var updated = false;
+
+        canvas.addEventListener('mousemove', function(e){
+            mousepos.x = e.offsetX;
+            mousepos.y = e.offsetY;
+            updated = true;
+        });
+
+        //----render loop-----
+        function render() {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            for(var i in others){
+                ctx.beginPath();
+                ctx.moveTo(others[i].x-5, others[i].y-5);
+                ctx.lineTo(others[i].x+5, others[i].y+5);
+                ctx.moveTo(others[i].x+5, others[i].y-5);
+                ctx.lineTo(others[i].x-5, others[i].y+5);
+                ctx.stroke();
+            }
+
+        }
+
+        function step(timestamp) {
+            window.requestAnimationFrame(step);
+            render();
+        }
+        window.requestAnimationFrame(step);
+
+
+        //----socket loop------
+        var socket = io();
+
+        function update() {
+
+            if(updated){
+                socket.emit('point', mousepos);
+                updated = false;
+            }
+        }
+        setInterval(update, 50);
+
+        socket.on('points', function(p){
+            console.log(p);
+            others = p;
+        });
+    </script>
+
+  </body>
+</html>
